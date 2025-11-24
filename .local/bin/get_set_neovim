@@ -1,39 +1,91 @@
 #!/bin/bash
 
-latest_version=$(curl --silent https://github.com/neovim/neovim/releases | grep -iE "Nvim [0-9].*?<\/h2>" | grep -Eo "[0-9]{1,}\.[0-9]{1,}\.[0-9]{1,}" | head -n 1)
-url="https://github.com/neovim/neovim/releases/download/v$latest_version/nvim-linux64.tar.gz"
-wget -q -P /tmp $url
-if [[ ! -f /tmp/nvim-linux64.tar.gz ]]; then
-    echo "[!] Unable to get neovim."
-    echo "URL: $url"
+log() {
+    local level="${1:-INFO}"
+    local message="${2:-}"
+    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    local log_file="${LOG_FILE:-/tmp/get_set_neovim.log}"
+    
+    # Color codes
+    local color_reset="\033[0m"
+    local color_info="\033[0;36m"    # Cyan
+    local color_warn="\033[0;33m"    # Yellow
+    local color_error="\033[0;31m"   # Red
+    local color_success="\033[0;32m" # Green
+    
+    # Select color based on level
+    local color="$color_info"
+    case "$level" in
+        ERROR) color="$color_error" ;;
+        WARN)  color="$color_warn" ;;
+        SUCCESS) color="$color_success" ;;
+    esac
+    # Log to console with color
+    echo -e "${color}[$timestamp] [$level]${color_reset} $message"
+    
+    # Log to file without color
+    echo "[$timestamp] [$level] $message" >> "$log_file"
+}
+
+NEOVIM_CONFIG_URL="https://github.com/wasifekbal/neovim.git"
+
+latest_version=`curl --silent https://api.github.com/repos/neovim/neovim/releases/latest | jq -r ".tag_name"`
+log "INFO" "Latest neovim version: $latest_version"
+download_link=`curl --silent https://api.github.com/repos/neovim/neovim/releases/latest | jq -r '.assets[] | select(.name | contains("linux-x86_64.tar.gz")) | .browser_download_url'`
+filename=`basename $download_link`
+log "INFO" "Downloading neovim from $download_link"
+wget -q -P /tmp $download_link
+if [[ ! -f /tmp/$filename ]]; then
+    log "ERROR" "Unable to get neovim."
+    log "ERROR" "URL: $download_link"
     exit
 fi
-tar -zxf /tmp/nvim-linux64.tar.gz --directory ~/.local/
+
+filename_without_extension=`echo -n $filename | cut -d "." -f 1`
+[[ ! -d ~/.local ]] && mkdir -p ~/.local
+tar -zxf /tmp/$filename --directory ~/.local/
+log "INFO" "Installed neovim to ~/.local/$filename_without_extension"
 [[ ! -d $HOME/.local/bin ]] && mkdir -p $HOME/.local/bin
-ln -sf $HOME/.local/nvim-linux64/bin/nvim $HOME/.local/bin/nvim
-rm -rf /tmp/nvim-linux64.tar.gz
-nvim --version
-[[ -d $HOME/.config/nvim ]] && rm -rf $HOME/.config/nvim
-git clone https://github.com/wasifekbal/neovim.git ~/.config/nvim
+ln -sf $HOME/.local/$filename_without_extension/bin/nvim $HOME/.local/bin/nvim
+log "INFO" "Linking nvim to $HOME/.local/bin/nvim"
+rm -rf /tmp/$filename
+nvim_version=`$HOME/.local/bin/nvim --version | head -n 1 | cut -d " " -f 2`
+log "INFO" "Neovim version: $nvim_version"
+
+if [[ -d $HOME/.config/nvim ]]; then
+    log "WARN" "$HOME/.config/nvim already exists."
+    log "WARN" "Do you want to overwrite it? [y/N]"
+    read  -p "[=] > " overwrite_neovim_config;
+else
+    git clone $NEOVIM_CONFIG_URL ~/.config/nvim
+fi
+
+if [[ "$overwrite_neovim_config" == "Y" || "$overwrite_neovim_config" == "y" ]]; then
+    log "WARN" "Overwriting $HOME/.config/nvim"
+    rm -rf $HOME/.config/nvim
+    git clone $NEOVIM_CONFIG_URL ~/.config/nvim
+fi
+
 if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
     export PATH="$HOME/.local/bin:$PATH"
     [[ -f $HOME/.bashrc ]] && echo 'export PATH=$PATH:$HOME/.local/bin' >> $HOME/.bashrc
-    echo "run 'source ~/.bashrc'"
+    log "INFO" "Added $HOME/.local/bin to PATH"
+    log "INFO" "Please reload your shell to make the changes take effect or run 'source ~/.bashrc'"
 fi
 
 # check and install node and npm
 if [[ $(which node) && $(which npm) ]]; then
-    echo "[+] Both Node and NPM are already installed."
+    log "INFO" "Both Node and NPM are already installed."
 else
-    echo "[!] Either Node or NPM is not installed."
+    log "WARN" "Either Node or NPM is not installed."
     read -p "[=] Do you want to install it via NVM? [Y/n] > " is_install_nvm;
     if [[ -z $is_install_nvm || "$is_install_nvm" == "Y" || "$is_install_nvm" == "y" ]]; then
-        echo "[+] installing NVM...";
+        log "INFO" "Installing NVM..."
         nvm_latest_version=$(curl --silent https://github.com/nvm-sh/nvm/releases | grep -iE "v[0-9].*?<\/h2>" | grep -Eo "[0-9]{1,}\.[0-9]{1,}\.[0-9]{1,}" | head -n 1)
         curl -o- "https://raw.githubusercontent.com/nvm-sh/nvm/v$nvm_latest_version/install.sh" | bash
         sleep 1;
         current_shell=$(basename "$SHELL")
-        echo "[+] current shell is $current_shell"
+        log "INFO" "Current shell is $current_shell"
         case "$current_shell" in
             bash)
                 rc_file="$HOME/.bashrc"
@@ -42,11 +94,11 @@ else
                 rc_file="$HOME/.zshrc"
                 ;;
             *)
-                echo "Source your shell rc file. or make npm availble on PATH";
+                log "ERROR" "Unsupported shell: $current_shell"
                 exit;
                 ;;
         esac
-        echo "[+] Sourcing $rc_file"
+        log "INFO" "Sourcing $rc_file"
         source $rc_file;
         export NVM_DIR="$HOME/.nvm"
         [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
@@ -69,7 +121,7 @@ if ! command -v yarn &> /dev/null; then
         sudo npm -g i yarn
     fi
 else
-    echo "[+] Yarn is already installed."
+    log "INFO" "Yarn is already installed."
 fi
 
 
