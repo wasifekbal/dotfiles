@@ -1,0 +1,30 @@
+#!/bin/bash
+
+# Options
+# poweroff=' Poweroff';
+restart_bcompare=' Restart Bcompare';
+re_iptux=' Restart Iptux'
+# lock=' Lock';
+# suspend='󰒲 Suspend';
+# logout='󰍃 Logout';
+
+
+SCRIPT_DIR="$HOME/.config/fuzzel/scripts/tools"
+
+options="$restart_bcompare\n$re_iptux";
+option_length="$(echo -e "$options" | wc -l)"
+
+choice=$(echo -e $options | fuzzel --dmenu -l $option_length -p " " --placeholder "Utility Tools" -i);
+
+case "$choice" in
+    # $restart_bcompare) "$SCRIPT_DIR/restart_bcomp.sh" ;;
+    $restart_bcompare)
+        killall -9 BCompare
+        nohup bcompare  &> /dev/null &
+        ;;
+    $re_iptux)
+        killall -9 iptux
+        # nohup iptux  &> /dev/null &
+        ;;
+    *) exit 1 ;;
+esac

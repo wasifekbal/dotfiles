@@ -1,0 +1,18 @@
+/* @theme "~/.config/rofi/themes/squared-everforest.rasi" */
+@theme "~/.config/rofi/themes/nord.rasi"
+
+window {
+  width: 30%;
+}
+
+inputbar {
+  children: [prompt,entry];
+}
+
+textbox {
+  horizontal-align: 0.5;
+}
+
+listview {
+  lines: 5;
+}

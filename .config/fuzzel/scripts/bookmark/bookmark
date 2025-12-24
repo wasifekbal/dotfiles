@@ -1,0 +1,26 @@
+#!/bin/bash
+
+BOOKMARK_DIR="$HOME/.local/bookmarks"
+BOOKMARK_FILE="$BOOKMARK_DIR/bookmarks.txt"
+
+if [ ! -d $BOOKMARK_DIR ]; then
+    mkdir -p $BOOKMARK_DIR;
+fi
+
+if [ ! -f $BOOKMARK_FILE ]; then
+    /usr/bin/touch $BOOKMARK_FILE;
+fi
+option_length="$(echo -e `tac $BOOKMARK_FILE` | wc -l)"
+echo $option_length
+
+selected_bookmark=$(tac $BOOKMARK_FILE | fuzzel --dmenu -p " " -l $option_length --placeholder "Select Bookmarks")
+if [ "$selected_bookmark" = "" ]; then
+    exit 0;
+fi
+
+if [ $(printf $selected_bookmark | grep -c '^\[') -gt 0 ]; then
+    bookmark_url=$(echo -n $selected_bookmark | cut -d "]" -f2 | tr -d " ");
+    xdotool type $bookmark_url;
+else
+    xdotool type $selected_bookmark;
+fi

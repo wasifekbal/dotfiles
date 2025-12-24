@@ -1,0 +1,43 @@
+#!/bin/bash
+
+BOOKMARK_DIR="$HOME/.local/bookmarks"
+BOOKMARK_FILE="$BOOKMARK_DIR/bookmarks.txt"
+
+if [ ! -d $BOOKMARK_DIR ]; then
+    mkdir -p $BOOKMARK_DIR;
+fi
+
+if [ ! -f $BOOKMARK_FILE ]; then
+    /usr/bin/touch $BOOKMARK_FILE;
+fi
+
+highlighted_text=$(xclip -o)
+
+if [ ! $highlighted_text ]; then
+    notify-send "No text selected" -t 2000 -i no-document;
+    exit 0;
+fi
+
+if [ $(grep -c $highlighted_text $BOOKMARK_FILE) -gt 0 ]; then
+    notify-send "Bookmark already exists.." "$(grep $highlighted_text $BOOKMARK_FILE)" -t 5000 -i bookmark;
+    exit 0;
+fi
+
+name=$(\
+    printf "OK\nCancel" \
+    | rofi -dmenu -p "  " -mesg $highlighted_text -selected-row 0 -theme-str "window{width: 800;} textbox{horizontal-align: 0.5;}")
+
+if [ "$name" = "" ]; then
+    exit 0;
+elif [ "$name" = "Cancel" ]; then
+    exit 0;
+elif [ "$name" = "OK" ]; then
+    echo $highlighted_text >> $BOOKMARK_FILE;
+    notify-send "bookmark created" "$highlighted_text" -t 5000 -u low -i bookmark_ok;
+else
+    entry="[$name] $highlighted_text"
+    echo $entry >> $BOOKMARK_FILE;
+    notify-send -t 5000 -u low "bookmark created" "$entry" -i bookmark_ok;
+fi
+
+
