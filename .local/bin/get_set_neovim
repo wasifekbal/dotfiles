@@ -5,14 +5,14 @@ log() {
     local message="${2:-}"
     local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
     local log_file="${LOG_FILE:-/tmp/get_set_neovim.log}"
-    
+
     # Color codes
     local color_reset="\033[0m"
     local color_info="\033[0;36m"    # Cyan
     local color_warn="\033[0;33m"    # Yellow
     local color_error="\033[0;31m"   # Red
     local color_success="\033[0;32m" # Green
-    
+
     # Select color based on level
     local color="$color_info"
     case "$level" in
@@ -22,12 +22,30 @@ log() {
     esac
     # Log to console with color
     echo -e "${color}[$timestamp] [$level]${color_reset} $message"
-    
+
     # Log to file without color
     echo "[$timestamp] [$level] $message" >> "$log_file"
 }
 
 NEOVIM_CONFIG_URL="https://github.com/wasifekbal/neovim.git"
+
+OS=$(uname -s)
+ARCH=$(uname -m)
+
+if [[ "$OS" == "Linux" ]]; then
+    ASSET_MATCH="linux-x86_64.tar.gz"
+elif [[ "$OS" == "Darwin" ]]; then
+    if [[ "$ARCH" == "arm64" ]]; then
+        ASSET_MATCH="macos-arm64.tar.gz"
+    else
+        ASSET_MATCH="macos-x86_64.tar.gz"
+    fi
+else
+    echo "Unsupported OS: $OS"
+    exit 1
+fi
+
+echo "Selected platform: OS=$OS ARCH=$ARCH"
 
 latest_version=`curl --silent https://api.github.com/repos/neovim/neovim/releases/latest | jq -r ".tag_name"`
 log "INFO" "Latest neovim version: $latest_version"
@@ -123,5 +141,3 @@ if ! command -v yarn &> /dev/null; then
 else
     log "INFO" "Yarn is already installed."
 fi
-
-
