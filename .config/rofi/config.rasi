@@ -1,13 +1,13 @@
 configuration {
-  /* font: "FiraCode Nerd Font Medium 11"; */
-  font: "JetBrainsMono Nerd Font SemiBold 12";
+  font: "FiraCode Nerd Font Medium 10";
+  // font: "JetBrainsMono Nerd Font SemiBold 12";
   line-margin: 10;
-  modi: "window,ssh,run,drun,windowcd,emoji";
+  modi: "window,ssh,run,drun";
 
   display-ssh:    "";
   display-run:    "";
   /* display-drun:   " "; */
-  display-drun:   "👉";
+  display-drun:   " ";
   display-window: "";
   display-combi:  "";
   show-icons:     true;
@@ -26,7 +26,7 @@ listview {
 window {
   location: center;
   anchor: center;
-	width: 50%;
+  width: 50%;
 }
 
 configuration {

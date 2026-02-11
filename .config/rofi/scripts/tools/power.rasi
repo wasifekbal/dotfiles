@@ -2,7 +2,7 @@
 @theme "~/.config/rofi/themes/nord.rasi"
 
 window {
-  width: 35%;
+  width: 30%;
 }
 
 inputbar {

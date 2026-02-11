@@ -1,0 +1,39 @@
+#!/bin/bash
+
+# Options
+# poweroff=' Poweroff';
+restart_bcompare=' Restart Bcompare';
+re_iptux=' Restart Iptux'
+re_network=" Restart NetworkManager"
+# lock=' Lock';
+# suspend='󰒲 Suspend';
+# logout='󰍃 Logout';
+
+
+ROFI_THEME="~/.config/rofi/scripts/powermenu/power.rasi"
+SCRIPT_DIR="$HOME/.config/rofi/scripts/tools"
+
+options="$restart_bcompare\n$re_iptux\n$re_network";
+
+choice=$(echo -e $options | rofi -dmenu -p "  " -mesg "Utility Tools" -i -theme $ROFI_THEME);
+
+case "$choice" in
+    $restart_bcompare)
+        killall -9 BCompare
+        nohup bcompare  &> /dev/null &
+        ;;
+    $re_iptux)
+        killall -9 iptux;
+        flatpak run io.github.iptux_src.iptux;
+        ;;
+    $re_network)
+        password=$(rofi -dmenu -password -p "Password:" -theme-str 'window { width: 30%; } listview { lines: 1; }');
+        echo $password | sudo -S -k systemctl restart NetworkManager;
+        ;;
+    *) exit 1 ;;
+esac
+
+
+ 
+
+

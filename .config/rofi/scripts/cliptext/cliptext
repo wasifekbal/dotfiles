@@ -1,0 +1,29 @@
+#!/bin/bash
+
+CLIPTEXT_DIR="$HOME/.local/cliptext"
+CLIPTEXT_FILE="$CLIPTEXT_DIR/cliptext.txt"
+
+if [ ! -d $CLIPTEXT_DIR ]; then
+    mkdir -p $CLIPTEXT_DIR;
+fi
+
+if [ ! -f $CLIPTEXT_FILE ]; then
+    /usr/bin/touch $CLIPTEXT_FILE;
+fi
+
+tac $CLIPTEXT_FILE;
+
+selected_clip=$( \
+    tac $CLIPTEXT_FILE | \
+    rofi -dmenu -p "  " \
+    -mesg "Select cliptext" \
+    -i -theme-str "window{width: 400;} textbox{horizontal-align: 0.5;} listview{lines:6;columns:1;}" \
+)
+
+if [ "$selected_clip" = "" ]; then
+    exit 0;
+fi
+
+echo $selected_clip | xclip -selection clipboard
+xdotool type $selected_clip;
+xdotool key KP_Enter;

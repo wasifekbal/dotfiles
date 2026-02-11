@@ -27,4 +27,3 @@ if [ $(printf $selected_bookmark | grep -c '^\[') -gt 0 ]; then
 else
     xdotool type $selected_bookmark;
 fi
-
