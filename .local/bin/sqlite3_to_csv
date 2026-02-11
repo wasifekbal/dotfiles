@@ -1,0 +1,30 @@
+#!/bin/bash
+
+# Help function to display usage
+function display_help {
+    echo "Usage: $0 <sqlite3_db_file> <destination_directory>"
+    echo "Export each table of the SQLite database to individual CSV files."
+    echo "Arguments:"
+    echo "  <sqlite3_db_file>: Path to the SQLite3 database file."
+    echo "  <destination_directory>: Directory to export CSV files. If not provided, current directory will be used."
+}
+
+# If no arguments provided or if -h is provided, display help
+if [[ ! "$1" || "$1" == "-h" ]]; then
+    display_help
+    exit 1
+fi
+
+if [[ ! "$1" ]]; then
+    echo "[X] provide the sqlite3 db file as an arg";
+    exit;
+fi
+db_file="$1"
+dest=$(echo "$2" | sed 's/\/$//')
+TABLES=$(sqlite3 $db_file ".tables")
+[[ ! -d "$2" ]] && mkdir "$2"
+for each_table in $TABLES; do
+    table_name=$(echo $each_table | tr -d '\r')
+    sqlite3 -header -csv $db_file "SELECT * FROM $table_name;" > "${dest}/${table_name}.csv"
+    echo "Exported table $table_name to ${table_name}.csv"
+done

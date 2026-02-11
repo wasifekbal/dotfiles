@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+usage() {
+    echo "Usage:"
+    echo "  $0 -e <file|dir> [more...]   # encrypt"
+    echo "  $0 -d <file.gpg> [more...]   # decrypt"
+    exit 1
+}
+
+[[ $# -lt 2 ]] && usage
+
+MODE="$1"
+shift
+
+read -s -p "Enter passphrase: " PASSPHRASE
+echo
+read -s -p "Confirm passphrase: " CONFIRM
+echo
+
+[[ "$PASSPHRASE" != "$CONFIRM" ]] && {
+    echo "Passphrases do not match"
+    exit 1
+}
+
+encrypt() {
+    local target="$1"
+
+    if [[ -d "$target" ]]; then
+        echo "[+] Encrypting directory: $target"
+        tar -czf "${target}.tar.gz" "$target"
+        gpg --batch --yes --symmetric --cipher-algo AES256 \
+            --passphrase "$PASSPHRASE" \
+            "${target}.tar.gz"
+        rm -f "${target}.tar.gz"
+
+    elif [[ -f "$target" ]]; then
+        echo "[+] Encrypting file: $target"
+        gpg --batch --yes --symmetric --cipher-algo AES256 \
+            --passphrase "$PASSPHRASE" \
+            "$target"
+    else
+        echo "[!] Skipping: $target (not found)"
+    fi
+}
+
+decrypt() {
+    local target="$1"
+
+    [[ "$target" != *.gpg ]] && {
+        echo "[!] Skipping: $target (not a .gpg file)"
+        return
+    }
+
+    echo "[+] Decrypting: $target"
+    local out="$(pwd)/${target%.gpg}"
+    gpg --batch --yes --decrypt \
+        --passphrase "$PASSPHRASE" \
+        "$target" > $out
+
+    if [[ "$out" == *.tar.gz ]]; then
+        echo "[+] Extracting archive: $out"
+        tar -xzf "$out"
+        rm -f "$out"
+    fi
+}
+
+case "$MODE" in
+    -e)
+        for item in "$@"; do
+            encrypt "$item"
+        done
+        ;;
+    -d)
+        for item in "$@"; do
+            decrypt "$item"
+        done
+        ;;
+    *)
+        usage
+        ;;
+esac
+
+echo "[✓] Done"

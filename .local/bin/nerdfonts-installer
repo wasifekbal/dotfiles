@@ -2,14 +2,14 @@
 
 # Declaring a array of fonts to be installed.
 declare -a fonts=(
-    # FiraCode
+    FiraCode
     Hack
     JetBrainsMono
 )
 fonts_dir="${HOME}/.local/share/fonts"
 
 # Fetching the latest version of nerd fonts.
-latest_version=$(/usr/bin/curl --silent --url "https://www.nerdfonts.com/releases" | grep -Eo "v[0-9]{1,}\.[0-9]{1,}\.[0-9]{1,} Release" | cut -d " " -f1 | head -n 1 -)
+latest_version=$(/usr/bin/curl --silent --url "https://www.nerdfonts.com/releases" | grep "<h2>v.*<\/h2>" - | head -1 | cut -b 5-10)
 
 # Creating a local font dir, if it doesn't exists.
 if [[ ! -d "$fonts_dir" ]]; then
