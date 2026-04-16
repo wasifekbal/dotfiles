@@ -54,7 +54,7 @@ def main():
         return
     print(f"[+] Downloading.. {link}")
     save_file_path = f'{VPNBOOK_DIR}/{link.split("-")[-1]}'
-    extract_zip_dir = VPNBOOK_DIR + "/" + save_file_path.split("/")[-1].split(".")[0]
+    extract_zip_dir = save_file_path.split("/")[-1].split(".")[0]
     if not download_file(link, save_file_path):
         return
     extract_zip(save_file_path, extract_zip_dir)

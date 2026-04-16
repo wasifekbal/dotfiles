@@ -9,14 +9,14 @@
 
 
 # package manager
-alias u="sudo apt update"
-alias ug="sudo apt upgrade"
-alias lu="sudo apt list --upgradable"
-alias uu="sudo apt update && sudo apt upgrade"
-alias i="sudo apt install"
-alias s="apt search"
-alias yeet="sudo apt purge"
-alias clean="sudo apt autoremove && sudo apt autoclean"
+alias u="sudo dnf check-update"
+alias ug="sudo dnf upgrade"
+alias lu="dnf check-update"
+alias uu="sudo dnf upgrade --refresh"
+alias i="sudo dnf install"
+alias s="dnf search"
+alias yeet="sudo dnf remove"
+alias clean="sudo dnf autoremove && sudo dnf clean all"
 
 # git
 alias gss='git status -s'
@@ -41,6 +41,7 @@ alias tksv='tmux kill-server'
 alias tkss='tmux kill-session -t'
 
 # misc
+alias dkr="docker"
 alias py="python"
 alias ip="ip -c"
 alias open="xdg-open"
@@ -48,17 +49,19 @@ alias v="nvim"
 alias server="live-server --host=0.0.0.0 --port=5500"
 alias dust="du -sh * | sort -hr"
 alias sk="screenkey --opacity 0.4 -g \`slop -n -f '%g'\` -p fixed --bak-mode normal"
-alias bcat="batcat"
+alias cat='bat --theme "Nord"'
 alias q="exit"
+alias drag="dragon -a -x"
 alias tsmr="transmission-remote"
 if [[ "$TERM" = "xterm-kitty" ]]; then
     alias ssh="export TERM=xterm-256color; kitten ssh"
 elif [[ "$TERM" = "alacritty" ]]; then
     alias ssh="export TERM=xterm-256color; ssh"
 fi
+alias r="ranger"
 
-alias l="exa -lh"
-alias ll="exa -lah"
+alias l="eza -lh"
+alias ll="eza -lah"
 
 alias copy="xclip -selection clipboard"
 alias paste="xclip -sel clip -o"

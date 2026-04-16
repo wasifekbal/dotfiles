@@ -1,198 +1,109 @@
 # ----------------------------------------
 # ███████╗███████╗██╗  ██╗██████╗  ██████╗
 # ╚══███╔╝██╔════╝██║  ██║██╔══██╗██╔════╝
-#   ███╔╝ ███████╗███████║██████╔╝██║     
-#  ███╔╝  ╚════██║██╔══██║██╔══██╗██║     
+#   ███╔╝ ███████╗███████║██████╔╝██║
+#  ███╔╝  ╚════██║██╔══██║██╔══██╗██║
 # ███████╗███████║██║  ██║██║  ██║╚██████╗
 # ╚══════╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝
 # ----------------------------------------
 
-# export PATH=$HOME/bin:/usr/local/bin:$PATH
-export PATH="$HOME/.yarn/bin:$HOME/.config/yarn/global/node_modules/.bin:$PATH"
+# PATH & ENVIRONMENT
+export PATH="$HOME/.yarn/bin:$HOME/.config/yarn/global/node_modules/.bin:$HOME/.local/bin:$HOME/bin:$PATH"
+[ -d $HOME/.local/go/bin ] && export PATH="$HOME/.local/go/bin:$PATH"
 
-if [ -d $HOME/.local/go/bin ]; then
-    export PATH="$HOME/.local/go/bin:$PATH"
-fi
+# Define plugin directory
+PLUGIN_DIR="$HOME/.zsh"
+mkdir -p "$PLUGIN_DIR"
 
 export XDG_CONFIG_HOME="$HOME/.config"
-
-# Path to your oh-my-zsh installation.
-export ZSH="$HOME/.oh-my-zsh"
-
-# Set name of the theme to load --- if set to "random", it will
-# load a random theme each time oh-my-zsh is loaded, in which case,
-# to know which specific one was loaded, run: echo $RANDOM_THEME
-# See https://github.com/ohmyzsh/ohmyzsh/wiki/Themes
-#ZSH_THEME="oxide"
-
-# Set list of themes to pick from when loading at random
-# Setting this variable when ZSH_THEME=random will cause zsh to load
-# a theme from this variable instead of looking in $ZSH/themes/
-# If set to an empty array, this variable will have no effect.
-# ZSH_THEME_RANDOM_CANDIDATES=( "robbyrussell" "agnoster" )
-
-# Uncomment the following line to use case-sensitive completion.
-# CASE_SENSITIVE="true"
-
-# Uncomment the following line to use hyphen-insensitive completion.
-# Case-sensitive completion must be off. _ and - will be interchangeable.
-# HYPHEN_INSENSITIVE="true"
-
-# Uncomment one of the following lines to change the auto-update behavior
-# zstyle ':omz:update' mode disabled  # disable automatic updates
-# zstyle ':omz:update' mode auto      # update automatically without asking
-# zstyle ':omz:update' mode reminder  # just remind me to update when it's time
-
-# Uncomment the following line to change how often to auto-update (in days).
-# zstyle ':omz:update' frequency 13
-
-# Uncomment the following line if pasting URLs and other text is messed up.
-# DISABLE_MAGIC_FUNCTIONS="true"
-
-# Uncomment the following line to disable colors in ls.
-# DISABLE_LS_COLORS="true"
-
-# Uncomment the following line to disable auto-setting terminal title.
-# DISABLE_AUTO_TITLE="true"
-
-# Uncomment the following line to enable command auto-correction.
-# ENABLE_CORRECTION="true"
-
-# Uncomment the following line to display red dots whilst waiting for completion.
-# You can also set it to another string to have that shown instead of the default red dots.
-# e.g. COMPLETION_WAITING_DOTS="%F{yellow}waiting...%f"
-# Caution: this setting can cause issues with multiline prompts in zsh < 5.7.1 (see #5765)
-# COMPLETION_WAITING_DOTS="true"
-
-# Uncomment the following line if you want to disable marking untracked files
-# under VCS as dirty. This makes repository status check for large repositories
-# much, much faster.
-# DISABLE_UNTRACKED_FILES_DIRTY="true"
-
-# Uncomment the following line if you want to change the command execution time
-# stamp shown in the history command output.
-# You can set one of the optional three formats:
-# "mm/dd/yyyy"|"dd.mm.yyyy"|"yyyy-mm-dd"
-# or set a custom format using the strftime function format specifications,
-# see 'man strftime' for details.
-# HIST_STAMPS="mm/dd/yyyy"
-
-# Would you like to use another custom folder than $ZSH/custom?
-# ZSH_CUSTOM=/path/to/new-custom-folder
-
-# Which plugins would you like to load?
-# Standard plugins can be found in $ZSH/plugins/
-# Custom plugins may be added to $ZSH_CUSTOM/plugins/
-# Example format: plugins=(rails git textmate ruby lighthouse)
-# Add wisely, as too many plugins slow down shell startup.
-plugins=(zsh-autosuggestions zsh-syntax-highlighting)
-
-source $ZSH/oh-my-zsh.sh
-
-# User configuration
-
-# export MANPATH="/usr/local/man:$MANPATH"
-# You may need to manually set your language environment
 export LANG=en_US.UTF-8
+export EDITOR=$([[ -n $SSH_CONNECTION ]] && echo "vim" || echo "nvim")
+export VISUAL=$EDITOR
 
-# Preferred editor for local and remote sessions
-if [[ -n $SSH_CONNECTION ]]; then
-  export EDITOR='vim'
-else
-  export EDITOR='nvim'
-  export VISUAL='nvim'
-fi
-
-# Compilation flags
-# export ARCHFLAGS="-arch x86_64"
-
-# Set personal aliases, overriding those provided by oh-my-zsh libs,
-# plugins, and themes. Aliases can be placed here, though oh-my-zsh
-# users are encouraged to define aliases within the ZSH_CUSTOM folder.
-# For a full list of active aliases, run `alias`.
+# PLUGIN MANAGEMENT (Manual & Lightweight)
 #
-# Example aliases
-# alias zshconfig="mate ~/.zshrc"
-# alias ohmyzsh="mate ~/.oh-my-zsh"
+# Function to fetch plugins if missing
+get_plugin() {
+    local repo=$1
+    local name=$(basename $repo)
+    local target_dir="$PLUGIN_DIR/$name"
 
-###########
-# Options #
-###########
+    # 1. Clone if missing
+    if [ ! -d "$target_dir" ]; then
+        echo "Installing $name..."
+        git clone --depth 1 "https://github.com/$repo.git" "$target_dir"
+    fi
+
+    # 2. Smart Sourcing Logic
+    # Look for: name.plugin.zsh -> name.zsh -> name.sh -> any .plugin.zsh
+    if [ -f "$target_dir/$name.plugin.zsh" ]; then
+        source "$target_dir/$name.plugin.zsh"
+    elif [ -f "$target_dir/$name.zsh" ]; then
+        source "$target_dir/$name.zsh"
+    elif [ -f "$target_dir/$name.sh" ]; then
+        source "$target_dir/$name.sh"
+    else
+        # Fallback: search for any file ending in .plugin.zsh
+        local fallback=$(find "$target_dir" -maxdepth 1 -name "*.plugin.zsh" | head -n 1)
+        if [ -n "$fallback" ]; then
+            source "$fallback"
+        fi
+    fi
+}
+
+get_plugin "zdharma-continuum/fast-syntax-highlighting"
+get_plugin "zsh-users/zsh-autosuggestions"
+
+
+# ZSH OPTIONS & COMPLETION
+autoload -Uz compinit && compinit
+setopt autocd # Change directory just by typing the path
+
+zmodload zsh/complist
+autoload -Uz compinit && compinit
+_comp_options+=(globdots) # Include hidden files in completion
+
+# Use arrow keys to navigate the menu
+zstyle ':completion:*' menu select
+# Colorize the completion menu to match 'ls'
+zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
+
+# History Settings
+HISTFILE="$HOME/.zsh_history"
+HISTSIZE=10000
+SAVEHIST=10000
+
+# History Options
+setopt EXTENDED_HISTORY      # Write the history file in the ':start:elapsed;command' format.
+setopt SHARE_HISTORY         # Share history between different instances of zsh
+setopt APPEND_HISTORY        # Append to the history file, don't overwrite
+setopt INC_APPEND_HISTORY    # Write to the history file immediately, not when the shell exits
+setopt HIST_IGNORE_DUPS      # Do not write a duplicate event to the history list
+setopt HIST_REDUCE_BLANKS    # Remove superfluous blanks from each command line
 setopt HIST_IGNORE_SPACE
 
-############
-# Keybinds #
-############ Autosuggestions
+# KEYBINDS
 bindkey '^ ' autosuggest-accept
+bindkey '^P' up-line-or-search
+bindkey '^N' down-line-or-search
 bindkey -s '^f' "tmux-session-maker\n"
 
-
-ZSH_AUTOSUGGEST_COMPLETION_IGNORE="git *"
-#ZSH_AUTOSUGGEST_HISTORY_IGNORE="git *"
-
+# ALIASES & EXTERNAL TOOLS
+[ -f ~/.zsh_functions ] && source ~/.zsh_functions
 [ -f ~/.zsh_aliases ] && source ~/.zsh_aliases
-[ -d ~/.dircolors ] && eval `dircolors ~/.dircolors/dircolors`
-[ -f ~/.local/pastenet ] && source ~/.local/pastenet
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
-
-## replace caps key with escape
-   #better solution is to change it from dconf-editor
-      #org.gnome.desktop.input-sources xkb-options -> ['caps:escape']
-#setxkbmap -option caps:escape
-
-mdg () {
-    mkdir -p $1 && cd $1;
-}
-
-# jump to a directory in $HOME
-fd () {
-    cd "$(find ~/ \
-        -type d \
-        -not -path '*/\.*/*' \
-        -not -path '*/Android/*' \
-        -not -path '*/node_modules/*' \
-        -not -path '*/venv/*' \
-        -not -path '*/\.*' \
-        -not -fstype 'sysfs' \
-        -not -fstype 'devfs' \
-        -not -fstype 'devtemfs' \
-        -not -fstype 'proc' \
-        | fzf)"
-}
-
-# jump to a directory in media
-fdm () {
-    cd "$(find /media/alpha/s1 \
-        /media/alpha/s2/ \
-        -type d \
-        | fzf)"
-}
-
-# edit config files.
-ec() {
-    a=$(find ~/.config ~/.local/bin -type f \
-        -not -path "*/\.cache/*" \
-        -not -path "*/\.git/*" \
-        -not -path "*/\.npm/*" \
-        -not -path "*/Cache/*" \
-        -not -path "*/node_modules/*" \
-        -not -path "*/BraveSoftware/*" \
-        -not -path "*/Code/*" \
-        -not -path "*/discord/*");
-    b=$(find ~/.local/bookmarks -type f -iname '*bookmarks.txt');
-    c=$(find ~/ -maxdepth 1 -type f -iname ".*");
-    printf "$a\n$b\n$c" | fzf | xargs -r $EDITOR
-}
-
-kt (){
-    for ((i = 0; i < 25; i++)); do
-        sudo -u root pkill -9 teamviewer
-        sudo -u root pkill -9 teamviewerd
-        sudo -u root pkill -9 TeamViewer
-        printf "$i\r";
-    done
-    echo "done.."
-}
-
-eval "$(starship init zsh)"
 eval "$(zoxide init zsh)"
+eval "$(starship init zsh)"
+
+# LAZY-LOAD NVM (This only loads NVM when you actually type 'nvm', 'node', or 'npm')
+export NVM_DIR="$HOME/.config/nvm"
+nvm() {
+    unset -f nvm node npm
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+    nvm "$@"
+}
+node() { nvm; node "$@"; }
+npm() { nvm; npm "$@"; }
+
+# FINISH
+ZSH_AUTOSUGGEST_COMPLETION_IGNORE="git *"

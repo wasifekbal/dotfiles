@@ -102,7 +102,6 @@ style = "fg:240"
 
 [python]
 symbol=" "
-# format = "[$symbol($version )]($style)"
 format = '[${symbol}${pyenv_prefix}(${version} )(\($virtualenv\) )]($style)'
 
 # Disable the package module, hiding it from the prompt completely
@@ -127,7 +126,7 @@ style_root = "bold red"
 format = "[$user]($style) in "
 disabled = false
 show_always = false
-#
+
 [hostname]
 ssh_only = true
 ssh_symbol = "🌏"

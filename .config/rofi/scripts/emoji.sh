@@ -11,8 +11,7 @@ else
 fi
 
 if [[ $ROFI_PATH != "" ]]; then
-    # $ROFI_PATH -show emoji -theme-str 'listview { lines: 15; columns: 1; }'
-    rofi -show emoji -theme-str 'listview { lines: 15; columns: 1; }'
+    $ROFI_PATH -show emoji -theme-str 'listview { lines: 15; columns: 1; }'
 else
     /usr/bin/notify-send -i error-hand-64 -t 4000 "Unable to find ROFI";
 fi

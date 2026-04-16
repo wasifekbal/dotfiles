@@ -1,0 +1,57 @@
+# Edit config files with fzf
+ec() {
+    local a b c
+    a=$(find ~/.config ~/.local/bin -maxdepth 3 -type f \
+        -not -path "*/\.cache/*" \
+        -not -path "*/\.git/*" \
+        -not -path "*/\.npm/*" \
+        -not -path "*/Cache/*" \
+        -not -path "*/node_modules/*" \
+        -not -path "*/BraveSoftware/*" \
+        -not -path "*/Code/*" \
+        -not -path "*/discord/*")
+    b=$(find ~/.local/bookmarks -maxdepth 2 -type f -iname '*bookmarks.txt' 2>/dev/null)
+    c=$(find ~/ -maxdepth 1 -type f -iname ".*")
+    
+    local file=$(printf "$a\n$b\n$c" | fzf --height 50% --border --header "Edit Config")
+    [ -n "$file" ] && $EDITOR "$file"
+}
+
+# Restart Gunicorn workers
+gr() {
+    local port=8000
+    while getopts "p:" opt; do
+        case $opt in
+            p) port=$OPTARG ;;
+            *) echo "Usage: gr [-p port]"; return 1 ;;
+        esac
+    done
+    
+    echo "[+] Restarting all gunicorn workers on port $port"
+    # Using -t to get PIDs, -i for the specific port
+    for i in $(sudo lsof -ti :$port); do
+        echo "[=] Restarting gunicorn PID $i"
+        sudo kill -HUP $i
+    done
+    echo "[+] Done."
+}
+
+mdg() { mkdir -p "$1" && cd "$1"; }
+
+ds() {
+    # 1. Extract host names safely using Zsh globbing (N) to avoid errors
+    local host=$(grep -hE '^\s*Host\s' ~/.ssh/config ~/.ssh/config.d/*(N) 2>/dev/null | \
+        awk '{print $2}' | \
+        grep -vE '\*|\?' | \
+        sort -u | \
+        fzf --height 40% --reverse --header "SSH Jump" \
+            --preview "ssh -G {} | grep -E 'hostname|user|port'" \
+            --preview-window=top:8:hidden \
+            --bind '?:toggle-preview')
+
+    # 2. Connect if a host was selected
+    if [[ -n "$host" ]]; then
+        echo "Connecting to $host..."
+        ssh "$host"
+    fi
+}
