@@ -86,11 +86,26 @@ setopt HIST_IGNORE_SPACE
 bindkey '^ ' autosuggest-accept
 bindkey '^P' up-line-or-search
 bindkey '^N' down-line-or-search
+bindkey '^A' beginning-of-line
+bindkey '^E' end-of-line
+
+# Word-wise movement (Ctrl + Left/Right)
+bindkey '^[[1;5D' backward-word
+bindkey '^[[1;5C' forward-word
+
+# Also often useful: Alt + Left/Right (standard on some systems)
+bindkey '^[[1;3D' backward-word
+bindkey '^[[1;3C' forward-word
+
+# Word-wise deletion (Ctrl + Backspace)
+bindkey '^H' backward-kill-word
+
 bindkey -s '^f' "tmux-session-maker\n"
 
 # ALIASES & EXTERNAL TOOLS
 [ -f ~/.zsh_functions ] && source ~/.zsh_functions
 [ -f ~/.zsh_aliases ] && source ~/.zsh_aliases
+[ -f ~/.local/pastenet ] && source ~/.local/pastenet
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 eval "$(zoxide init zsh)"
 eval "$(starship init zsh)"

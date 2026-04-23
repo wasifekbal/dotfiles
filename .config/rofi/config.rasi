@@ -1,4 +1,5 @@
 configuration {
+  /* font: "FiraCode Nerd Font Medium 11"; */
   font: "JetBrainsMono Nerd Font SemiBold 12";
   line-margin: 10;
   modi: "window,ssh,run,drun,emoji";
@@ -41,3 +42,4 @@ configuration {
     kb-remove-char-back: "BackSpace,Shift+BackSpace";
     kb-row-left: "Control+h";
 }
+
