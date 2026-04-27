@@ -1,0 +1,108 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  local script_name
+  script_name="$(basename "$0")"
+
+  cat <<USAGE
+Usage:
+  $script_name <-e|-d> <file-or-directory> [-a] [ansible-vault options]
+
+Options:
+  -e  Encrypt file(s)
+  -d  Decrypt file(s)
+  -a  Ask for the vault password interactively
+
+Examples:
+  $script_name -e secrets.yml
+  $script_name -d ./group_vars -a
+
+If ~/.config/ansible/vault-password exists, it is used automatically.
+If <file-or-directory> is a directory, all regular files inside it are processed recursively.
+USAGE
+}
+
+if [[ $# -lt 2 ]]; then
+  usage >&2
+  exit 2
+fi
+
+default_vault_password_file="${ANSIBLE_VAULT_PASSWORD_FILE:-$HOME/.config/ansible/vault-password}"
+mode="$1"
+target="$2"
+shift 2
+vault_args=()
+
+for arg in "$@"; do
+  case "$arg" in
+    -a)
+      vault_args+=(--ask-vault-pass)
+      ;;
+    *)
+      vault_args+=("$arg")
+      ;;
+  esac
+done
+
+if [[ " ${vault_args[*]} " != *" --ask-vault-pass "* && " ${vault_args[*]} " != *" --vault-password-file "* && -f "$default_vault_password_file" ]]; then
+  vault_args+=(--vault-password-file "$default_vault_password_file")
+fi
+
+case "$mode" in
+  -e)
+    action="encrypt"
+    ;;
+  -d)
+    action="decrypt"
+    ;;
+  -h|--help|help)
+    usage
+    exit 0
+    ;;
+  *)
+    echo "Error: action flag must be '-e' for encrypt or '-d' for decrypt." >&2
+    usage >&2
+    exit 2
+    ;;
+esac
+
+if ! command -v ansible-vault >/dev/null 2>&1; then
+  echo "Error: ansible-vault is not installed or not in PATH." >&2
+  exit 127
+fi
+
+if [[ ! -e "$target" ]]; then
+  echo "Error: target does not exist: $target" >&2
+  exit 1
+fi
+
+process_file() {
+  local file="$1"
+  local first_line=""
+
+  [[ -f "$file" ]] || return 0
+
+  IFS= read -r first_line < "$file" || true
+
+  if [[ "$action" == "encrypt" && "$first_line" == '$ANSIBLE_VAULT;'* ]]; then
+    printf 'skip: %s is already encrypted\n' "$file"
+    return 0
+  fi
+
+  if [[ "$action" == "decrypt" && "$first_line" != '$ANSIBLE_VAULT;'* ]]; then
+    printf 'skip: %s is not encrypted\n' "$file"
+    return 0
+  fi
+
+  printf '%s: %s\n' "$action" "$file"
+  ansible-vault "$action" "$file" "${vault_args[@]}"
+}
+
+if [[ -d "$target" ]]; then
+  while IFS= read -r -d '' file; do
+    process_file "$file"
+  done < <(find "$target" -type f -print0)
+else
+  process_file "$target"
+fi

@@ -41,6 +41,7 @@ alias tksv='tmux kill-server'
 alias tkss='tmux kill-session -t'
 
 # misc
+alias lg="lazygit"
 alias dkr="docker"
 alias py="python"
 alias ip="ip -c"
